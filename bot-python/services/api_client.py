@@ -12,9 +12,8 @@ class APIClient:
     def __init__(self, base_url: str):
         self.base_url = base_url
         # Создаем асинхронный клиент, который будет использоваться для всех запросов.
-        # proxies=None отключает использование системных прокси, которые могут мешать
-        # подключению к локальному бэкенду.
-        self.client = httpx.AsyncClient(base_url=self.base_url, timeout=10.0, proxies=None)
+        # trust_env=False отключает использование системных прокси и переменных окружения.
+        self.client = httpx.AsyncClient(base_url=self.base_url, timeout=10.0, trust_env=False)
 
     async def ping_server(self) -> bool:
         """
