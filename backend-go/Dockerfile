@@ -1,7 +1,7 @@
 # Dockerfile для Go бэкенда
 
 # Этап сборки
-FROM golang:1.22-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 # Установка зависимостей, необходимых для сборки (если есть)
 RUN apk add --no-cache git
@@ -25,8 +25,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o server ./cmd/serv
 # Этап выполнения
 FROM alpine:latest
 
-# Устанавливаем сертификаты CA для HTTPS-соединений (например, для базы данных)
-RUN apk --no-cache add ca-certificates
+# Устанавливаем сертификаты CA и curl для healthcheck
+RUN apk --no-cache add ca-certificates curl
 
 WORKDIR /root/
 

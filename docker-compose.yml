@@ -11,6 +11,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
+    networks:
+      - gigavpn_net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U gigavpn_user -d gigavpn_db"]
       interval: 10s
@@ -29,6 +31,8 @@ services:
       postgres:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      - gigavpn_net
 
   gigavpn_backend:
     build:
@@ -43,7 +47,9 @@ services:
       postgres:
         condition: service_healthy
     restart: unless-stopped
-    command: go run ./cmd/server
+    command: ./server
+    networks:
+      - gigavpn_net
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/ping"]
       interval: 10s
@@ -56,15 +62,25 @@ services:
       dockerfile: Dockerfile
     container_name: gigavpn_bot
     environment:
-      BOT_TOKEN: ${BOT_TOKEN} # Переменная окружения для токена бота
-      BACKEND_URL: http://gigavpn_backend:8080 # Обращение к Go бэкенду по имени сервиса
+      BOT_TOKEN: ${BOT_TOKEN}
+      BACKEND_URL: http://gigavpn_backend:8080
     depends_on:
       gigavpn_backend:
-        condition: service_healthy # Бот зависит от бэкенда
+        condition: service_healthy
     volumes:
-      - ./bot-python:/app # Монтируем директорию для удобства разработки
+      - ./bot-python:/app
     restart: unless-stopped
+    networks:
+      - gigavpn_net
     
 volumes:
   postgres_data:
     driver: local
+
+networks:
+  gigavpn_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16
