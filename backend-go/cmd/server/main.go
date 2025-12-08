@@ -1,50 +1,43 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 
-	"gigavpn/backend-go/internal/vless"
+	"gigavpn/backend-go/internal/repository"
+	"gigavpn/backend-go/internal/transport/http"
 )
 
 func main() {
 	fmt.Println("Запуск VPN-Orchestrator (Control Plane)...")
-	fmt.Println("Этап 1: Генерация тестового ключа VLESS...")
 
-	// 1. Генерируем UUID для пользователя
-	vlessUUID, err := vless.GenerateVLESSUUID()
-	if err != nil {
-		log.Fatalf("Не удалось сгенерировать VLESS UUID: %v", err)
+	// --- Конфигурация подключения к БД ---
+	dbConfig := repository.DBConfig{
+		User:     "gigavpn_user",
+		Password: "gigavpn_password_DoNotUseInProd",
+		Host:     "localhost",
+		Port:     "5432",
+		DBName:   "gigavpn_db",
 	}
-	fmt.Printf(" - Сгенерирован VLESS UUID: %s\n", vlessUUID)
 
-	// 2. Генерируем пару ключей Reality (пока используются заглушки)
-	// Приватный ключ сохраняется в БД, а публичный используется в ссылке.
-	_, publicKey, err := vless.GenerateKeyPair()
+	// --- Инициализация пула соединений с БД ---
+	dbPool, err := repository.NewPostgresDB(context.Background(), dbConfig)
 	if err != nil {
-		log.Fatalf("Не удалось сгенерировать ключи: %v", err)
+		log.Fatalf("Не удалось подключиться к базе данных: %v", err)
 	}
-	fmt.Printf(" - Сгенерирована пара ключей (Public): %s\n", publicKey)
+	defer dbPool.Close()
+	fmt.Println("✅ Успешное подключение к базе данных!")
 
-	// 3. Генерируем ShortID для Reality
-	shortID, err := vless.GenerateShortID()
-	if err != nil {
-		log.Fatalf("Не удалось сгенерировать ShortID: %v", err)
+	// --- Инициализация HTTP-сервера ---
+	// В будущем мы передадим dbPool в NewHandler, чтобы обработчики могли работать с БД.
+	handler := http.NewHandler() 
+	router := handler.InitRoutes()
+
+	// --- Запуск сервера ---
+	serverPort := "8080"
+	log.Printf("Запуск HTTP-сервера на порту %s...", serverPort)
+	if err := router.Run(":" + serverPort); err != nil {
+		log.Fatalf("Ошибка при запуске HTTP-сервера: %v", err)
 	}
-	fmt.Printf(" - Сгенерирован ShortID: %s\n", shortID)
-
-	// 4. Собираем финальную ссылку подключения
-	// Эти данные обычно берутся из БД или конфига
-	const serverAddress = "192.168.1.1"
-	const serverPort = "443"
-	const serverName = "MyVPN-NL"
-	const sni = "www.microsoft.com"
-
-	link := vless.BuildVLESSLink(vlessUUID, publicKey, shortID, serverAddress, serverPort, serverName, sni)
-
-	fmt.Println("\n--- РЕЗУЛЬТАТ ---")
-	fmt.Println("Полная ссылка для подключения (VLESS):")
-	fmt.Printf("%s\n", link)
-	fmt.Println("\nЭтап 1 (MVP Core) успешно продемонстрирован.")
-	fmt.Println("Следующие шаги: подключение к БД, реализация API и автоматизация через SSH/gRPC.")
 }
