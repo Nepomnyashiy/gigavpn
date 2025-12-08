@@ -46,6 +46,6 @@ Thumbs.db
 *.env.*.local
 
 # Project specific
-dev/
+dev/dairy/
 docs/
 *.log
