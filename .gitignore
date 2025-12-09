@@ -46,8 +46,6 @@ Thumbs.db
 *.env.*.local
 
 # Project specific
-dev/dairy/
-docs/
 *.log
 
 # Infrastructure

@@ -77,3 +77,11 @@ db-migrate-status:
 	@echo "--- Статус миграций БД ---"
 	@docker run --rm -v $(GO_BACKEND_DIR)/migrations:/migrations --network gigavpn_gigavpn_net migrate/migrate \
 		-path=/migrations/ -database 'postgres://gigavpn_user:gigavpn_password_DoNotUseInProd@postgres:5432/gigavpn_db?sslmode=disable' status
+
+# === Ansible ===
+ANSIBLE_PLAYBOOKS_DIR = ./infrastructure/ansible/playbooks
+ANSIBLE_INVENTORY_DIR = ./infrastructure/ansible/inventory
+
+ansible-deploy:
+	@echo "--- Запуск Ansible плейбука для развертывания VPN-узлов ---"
+	ansible-playbook -i $(ANSIBLE_INVENTORY_DIR)/hosts.ini $(ANSIBLE_PLAYBOOKS_DIR)/site.yml
