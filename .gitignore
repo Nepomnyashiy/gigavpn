@@ -49,3 +49,6 @@ Thumbs.db
 dev/dairy/
 docs/
 *.log
+
+# Infrastructure
+infrastructure/ansible/
